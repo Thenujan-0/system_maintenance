@@ -150,7 +150,7 @@ class Ui_MainWindow(object):
     # setupUi
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
+        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"remove home cache", None))
         self.label.setText(QCoreApplication.translate("MainWindow", u"The hidden .cache folder in your home   directory is used by many parts of your system. This includes downloads,  thumbnails, desktop resources, and more. While it is generally safe to remove everything in your ~/.cache folder, it may be more advisable to inspect its contents and selectively remove items instead.'", None))
         self.label_size.setText("")
         self.btn_remove_manually.setText(QCoreApplication.translate("MainWindow", u"remove manually", None))

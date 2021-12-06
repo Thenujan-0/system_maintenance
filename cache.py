@@ -9,7 +9,6 @@ class Ui(QtWidgets.QMainWindow):
     def __init__(self):
         super(Ui, self).__init__()
         uic.loadUi('home_cache.ui', self)
-        self.show()
         
         self.btn_clear.clicked.connect(self.clear_btn_callback)
         self.btn_remove_manually.clicked.connect(self.remove_manually_btn_callback)
@@ -98,6 +97,9 @@ class Ui(QtWidgets.QMainWindow):
     def remove_manually_btn_callback(self):
         subprocess.Popen(['xdg-open ~/.cache'],shell=True)
 
-app = QtWidgets.QApplication(sys.argv)
-window = Ui()
-app.exec_()
+
+if __name__=='__main__':
+    app = QtWidgets.QApplication(sys.argv)
+    window = Ui()
+    window.show
+    app.exec_()

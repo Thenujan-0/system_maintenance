@@ -14,7 +14,7 @@
    <bool>false</bool>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>remove home cache</string>
   </property>
   <property name="dockNestingEnabled">
    <bool>false</bool>

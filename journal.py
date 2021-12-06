@@ -9,14 +9,13 @@ class Ui(QtWidgets.QMainWindow):
     def __init__(self):
         super(Ui, self).__init__()
         uic.loadUi('journalctl.ui', self)
-        self.show()
         
     
         threading.Thread(target=self.setSizeLabel).start()
         self.btn_clear_time.clicked.connect(self.btn_clear_time_callback)
         self.btn_clear_size.clicked.connect(self.btn_clear_size_callback)
         
-        self.btn_show_details =QtWidgets.QPushButton(self)
+        self.btn_show_details =QtWidgets.QPushButton()
         self.btn_show_details.setText('Show details')
         self.btn_show_details.clicked.connect(self.btn_show_details_callback)
         
@@ -24,7 +23,7 @@ class Ui(QtWidgets.QMainWindow):
         self.scrollLabel=False
         
         #adds scroll area with label
-        self.scrollArea = QtWidgets.QScrollArea(self.centralwidget)
+        self.scrollArea = QtWidgets.QScrollArea()
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollArea")
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
@@ -125,7 +124,8 @@ class Ui(QtWidgets.QMainWindow):
             self.ledt_size.setText('enter a number')
             self.ledt_size.selectAll()
             self.ledt_size.setFocus()
-
-app = QtWidgets.QApplication(sys.argv)
-window = Ui()
-app.exec_()
+if __name__ == '__main__':
+    app = QtWidgets.QApplication(sys.argv)
+    window = Ui()
+    window.show()
+    app.exec_()

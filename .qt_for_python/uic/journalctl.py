@@ -127,7 +127,7 @@ class Ui_MainWindow(object):
     # setupUi
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
+        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"remove journalctl logs", None))
         self.lbl_size.setText(QCoreApplication.translate("MainWindow", u"Current size of journal ctl is", None))
         self.groupBox.setTitle(QCoreApplication.translate("MainWindow", u"remove all but the most recent entries by size or time", None))
         self.ledt_time.setText(QCoreApplication.translate("MainWindow", u"12", None))

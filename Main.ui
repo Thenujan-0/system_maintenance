@@ -11,21 +11,21 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>System Maintenance</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout_2">
     <item row="0" column="0">
      <layout class="QGridLayout" name="gridLayout">
       <item row="1" column="0">
-       <widget class="QPushButton" name="pushButton">
+       <widget class="QPushButton" name="btn_rm_journal">
         <property name="text">
          <string>remove journalctl logs</string>
         </property>
        </widget>
       </item>
       <item row="0" column="0">
-       <widget class="QPushButton" name="pushButton_2">
+       <widget class="QPushButton" name="btn_mirrors">
         <property name="text">
          <string>mirrors</string>
         </property>
@@ -39,7 +39,7 @@
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="QPushButton" name="pushButton_4">
+       <widget class="QPushButton" name="btn_rm_cache">
         <property name="text">
          <string>remove cache in home directory</string>
         </property>
