@@ -1,6 +1,6 @@
 
 
-k='Hello there'
+k='Hello there \nhi'
+print(k)
 
-for i in range(5):
-    print(i)
+print(k[-2:])

@@ -4,7 +4,8 @@ import subprocess
 from time import sleep
 import threading
 import re
-from  temp1 import readJournal
+import traceback
+from  journaldconf import readJournal,editJournal,setJournalConfig
 
 class Ui(QtWidgets.QMainWindow):
     def __init__(self):
@@ -19,6 +20,8 @@ class Ui(QtWidgets.QMainWindow):
         self.btn_show_details =QtWidgets.QPushButton()
         self.btn_show_details.setText('Show details')
         self.btn_show_details.clicked.connect(self.btn_show_details_callback)
+        
+        self.btn_journal_max_size.clicked.connect(self.btn_journal_max_size_callback)
         
         self.showDetails=False
         self.scrollLabel=False
@@ -37,10 +40,8 @@ class Ui(QtWidgets.QMainWindow):
         self.gridLayout_4.addWidget(self.label, 0, 0, 1, 1)
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
         
-        if readJournal()[0] is not None:
-            self.lbl_max_size.setText('current maximum size of the journal is '+readJournal()[0])
-        else:
-            self.lbl_max_size.setText('maximum size of the journal is not set')
+        
+        threading.Thread(target=self.setMaxSizeLabel).start()
         
         #adds scroll area with label
         # self.scrollArea = QtWidgets.QScrollArea()
@@ -56,6 +57,33 @@ class Ui(QtWidgets.QMainWindow):
         # self.label.setObjectName("label")
         # self.gridLayout_3.addWidget(self.label, 0, 0, 1, 1)
         # self.scrollArea.setWidget(self.scrollAreaWidgetContents)
+    
+    def setMaxSizeLabel(self):
+        while True:
+            sleep(1)
+            if readJournal()[0] is not None:
+                if readJournal()[1]==0:
+                    self.lbl_max_size.setText('current maximum size of the journal is '+readJournal()[0])
+                else:
+                    self.lbl_max_size.setText('Something went wrong . Please check if file is configured correctly ')
+            else:
+                self.lbl_max_size.setText('maximum size of the journal is not set')
+    
+    def btn_journal_max_size_callback(self):
+        try:
+            comboValue=self.comboBoxMaxSize.currentText()
+            value=int(self.ledt_max_size.text())
+            string='SystemMaxUse='+str(value)+comboValue
+            
+            print(string)
+            setJournalConfig(string)
+            editJournal()
+        except Exception as e:
+            print(e)
+            print(traceback.format_exc())
+            self.ledt_max_size.setText('enter a number')
+            self.ledt_max_size.selectAll()
+            self.ledt_max_size.setFocus()
             
     def btn_show_details_callback(self):
         if not self.scrollLabel:
@@ -75,6 +103,7 @@ class Ui(QtWidgets.QMainWindow):
             
             self.gridLayout.addWidget(self.btn_show_details,2,0,1,1)
             self.showDetails=True
+            
     def setSizeLabel(self):
         while True:
             self.lbl_size.setText('Current size of journal ctl is '+self.getSize())
@@ -119,10 +148,6 @@ class Ui(QtWidgets.QMainWindow):
                 out = subprocess.check_output([f'journalctl --vacuum-time={number}s 2>&1'],shell=True).decode()
                 self.label.setText(self.label.text()+'\n'+out)
                 
-            
-                
-            
-
         except Exception as e:
             print(e)
             self.ledt_time.setText('enter a number')
