@@ -4,6 +4,7 @@ import subprocess
 from time import sleep
 import threading
 import re
+from  temp1 import readJournal
 
 class Ui(QtWidgets.QMainWindow):
     def __init__(self):
@@ -22,24 +23,44 @@ class Ui(QtWidgets.QMainWindow):
         self.showDetails=False
         self.scrollLabel=False
         
-        #adds scroll area with label
         self.scrollArea = QtWidgets.QScrollArea()
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setObjectName("scrollArea")
         self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 533, 162))
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 539, 55))
         self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
-        self.gridLayout_3 = QtWidgets.QGridLayout(self.scrollAreaWidgetContents)
-        self.gridLayout_3.setObjectName("gridLayout_3")
+        self.gridLayout_4 = QtWidgets.QGridLayout(self.scrollAreaWidgetContents)
+        self.gridLayout_4.setObjectName("gridLayout_4")
         self.label = QtWidgets.QLabel(self.scrollAreaWidgetContents)
         self.label.setWordWrap(True)
         self.label.setObjectName("label")
-        self.gridLayout_3.addWidget(self.label, 0, 0, 1, 1)
+        self.gridLayout_4.addWidget(self.label, 0, 0, 1, 1)
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
+        
+        if readJournal()[0] is not None:
+            self.lbl_max_size.setText('current maximum size of the journal is '+readJournal()[0])
+        else:
+            self.lbl_max_size.setText('maximum size of the journal is not set')
+        
+        #adds scroll area with label
+        # self.scrollArea = QtWidgets.QScrollArea()
+        # self.scrollArea.setWidgetResizable(True)
+        # self.scrollArea.setObjectName("scrollArea")
+        # self.scrollAreaWidgetContents = QtWidgets.QWidget()
+        # self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 533, 162))
+        # self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
+        # self.gridLayout_3 = QtWidgets.QGridLayout(self.scrollAreaWidgetContents)
+        # self.gridLayout_3.setObjectName("gridLayout_3")
+        # self.label = QtWidgets.QLabel(self.scrollAreaWidgetContents)
+        # self.label.setWordWrap(True)
+        # self.label.setObjectName("label")
+        # self.gridLayout_3.addWidget(self.label, 0, 0, 1, 1)
+        # self.scrollArea.setWidget(self.scrollAreaWidgetContents)
             
     def btn_show_details_callback(self):
         if not self.scrollLabel:
-            self.gridLayout.addWidget(self.scrollArea, 1, 0, 1, 1)
+            self.gridLayout.addWidget(self.scrollArea, 3, 0, 1, 1)
+
             self.scrollLabel=True
             self.btn_show_details.setText('Hide details')
         
@@ -52,7 +73,7 @@ class Ui(QtWidgets.QMainWindow):
     def initShowDetails(self):
         if not self.showDetails:
             
-            self.verticalLayout.addWidget(self.btn_show_details)
+            self.gridLayout.addWidget(self.btn_show_details,2,0,1,1)
             self.showDetails=True
     def setSizeLabel(self):
         while True:
@@ -102,7 +123,8 @@ class Ui(QtWidgets.QMainWindow):
                 
             
 
-        except:
+        except Exception as e:
+            print(e)
             self.ledt_time.setText('enter a number')
             self.ledt_time.selectAll()
             self.ledt_time.setFocus()
@@ -120,7 +142,8 @@ class Ui(QtWidgets.QMainWindow):
             # self.label.setText(self.label.text()+'\n'+out)
             
 
-        except:
+        except Exception as e:
+            print(e)
             self.ledt_size.setText('enter a number')
             self.ledt_size.selectAll()
             self.ledt_size.setFocus()
