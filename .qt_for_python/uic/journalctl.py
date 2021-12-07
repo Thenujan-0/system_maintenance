@@ -137,10 +137,10 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout.addWidget(self.comboBoxMaxSize)
 
-        self.pushButton = QPushButton(self.groupBox_2)
-        self.pushButton.setObjectName(u"pushButton")
+        self.btn_journal_max_size = QPushButton(self.groupBox_2)
+        self.btn_journal_max_size.setObjectName(u"btn_journal_max_size")
 
-        self.horizontalLayout.addWidget(self.pushButton)
+        self.horizontalLayout.addWidget(self.btn_journal_max_size)
 
         self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
 
@@ -197,7 +197,7 @@ class Ui_MainWindow(object):
         self.comboBoxMaxSize.setItemText(0, QCoreApplication.translate("MainWindow", u"M", None))
         self.comboBoxMaxSize.setItemText(1, QCoreApplication.translate("MainWindow", u"G", None))
 
-        self.pushButton.setText(QCoreApplication.translate("MainWindow", u"set", None))
+        self.btn_journal_max_size.setText(QCoreApplication.translate("MainWindow", u"set", None))
         self.lbl_max_size.setText(QCoreApplication.translate("MainWindow", u"maximum size is not set for the journal", None))
     # retranslateUi
 
