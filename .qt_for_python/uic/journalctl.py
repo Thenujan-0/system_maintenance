@@ -106,13 +106,7 @@ class Ui_MainWindow(object):
 
         self.gridLayout_2.addLayout(self.horizontalLayout_3, 0, 0, 1, 1)
 
-
-        self.verticalLayout.addWidget(self.groupBox)
-
-
-        self.gridLayout.addLayout(self.verticalLayout, 0, 0, 1, 1)
-
-        self.groupBox_2 = QGroupBox(self.centralwidget)
+        self.groupBox_2 = QGroupBox(self.groupBox)
         self.groupBox_2.setObjectName(u"groupBox_2")
         self.groupBox_2.setEnabled(True)
         self.groupBox_2.setCheckable(True)
@@ -158,7 +152,13 @@ class Ui_MainWindow(object):
         self.gridLayout_3.addWidget(self.lbl_max_size, 1, 0, 1, 1)
 
 
-        self.gridLayout.addWidget(self.groupBox_2, 1, 0, 1, 1)
+        self.gridLayout_2.addWidget(self.groupBox_2, 1, 0, 1, 1)
+
+
+        self.verticalLayout.addWidget(self.groupBox)
+
+
+        self.gridLayout.addLayout(self.verticalLayout, 0, 0, 1, 1)
 
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)

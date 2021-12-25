@@ -70,7 +70,7 @@ class Ui_MainWindow(object):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"System Maintenance", None))
         self.btn_rm_journal.setText(QCoreApplication.translate("MainWindow", u"remove journalctl logs", None))
         self.btn_mirrors.setText(QCoreApplication.translate("MainWindow", u"mirrors", None))
-        self.pushButton_3.setText(QCoreApplication.translate("MainWindow", u"somethins", None))
+        self.pushButton_3.setText(QCoreApplication.translate("MainWindow", u"swap memory", None))
         self.btn_rm_cache.setText(QCoreApplication.translate("MainWindow", u"remove cache in home directory", None))
     # retranslateUi
 

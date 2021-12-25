@@ -34,7 +34,7 @@
       <item row="0" column="1">
        <widget class="QPushButton" name="pushButton_3">
         <property name="text">
-         <string>somethins</string>
+         <string>swap memory</string>
         </property>
        </widget>
       </item>
