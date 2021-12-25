@@ -10,8 +10,6 @@ def readJournal():
     
     file='/etc/systemd/journald.conf'
     global SystemMaxUse
-    #! edit later on final release
-    file='/opt/temp.txt'
     
     with open(file) as f:
         data = f.read()
@@ -49,8 +47,6 @@ def readJournal():
 
 def setJournalConfig(replacementString):
     file='/etc/systemd/journald.conf'
-    #! edit later on final release
-    file='/opt/temp.txt'
     global SystemMaxUse
     
     with open(file) as f:
@@ -99,8 +95,8 @@ def setJournalConfig(replacementString):
         f.write(data)
 
 def editJournal():
-    #! edit later on final release
-    file='/opt/temp.txt'
+    file='/etc/systemd/journald.conf'
+
     
         
     subprocess.run([f'pkexec cp -f  "{PATH}/journaldconf.txt"  '+file],shell=True)

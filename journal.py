@@ -121,31 +121,31 @@ class Ui(QtWidgets.QMainWindow):
             number = int(self.ledt_time.text())
             self.initShowDetails()
             if combo_value=='months' or combo_value=='weeks':
-                self.label.setText(self.label.text()+'\n'+f'journalctl --vacuum-time={number}{combo_value}')
-                out = subprocess.check_output([f'journalctl --vacuum-time={number}{combo_value} 2>&1'],shell=True).decode()
+                self.label.setText(self.label.text()+'\n'+f'pkexec journalctl --vacuum-time={number}{combo_value}')
+                out = subprocess.check_output([f'pkexec journalctl --vacuum-time={number}{combo_value} 2>&1'],shell=True).decode()
                 print('out start'+out,'out')
                 
                 self.label.setText(self.label.text()+'\n'+out)
                 
             elif combo_value=='days':
-                self.label.setText(self.label.text()+'\n'+f'journalctl --vacuum-time={number*24}h')
-                out = subprocess.check_output([f'journalctl --vacuum-time={number*24}h 2>&1'],shell=True).decode()
+                self.label.setText(self.label.text()+'\n'+f'pkexec journalctl --vacuum-time={number*24}h')
+                out = subprocess.check_output([f'pkexec journalctl --vacuum-time={number*24}h 2>&1'],shell=True).decode()
                 self.label.setText(self.label.text()+'\n'+out)
                 
                 
             elif combo_value=='hours':
-                self.label.setText(self.label.text()+'\n'+f'journalctl --vacuum-time={number}h ')
-                out = subprocess.check_output([f'journalctl --vacuum-time={number}h 2>&1'],shell=True).decode()
+                self.label.setText(self.label.text()+'\n'+f'pkexec journalctl --vacuum-time={number}h ')
+                out = subprocess.check_output([f'pkexec journalctl --vacuum-time={number}h 2>&1'],shell=True).decode()
                 self.label.setText(self.label.text()+'\n'+out)
                 
             elif combo_value=='minutes':
-                self.label.setText(self.label.text()+'\n'+f'journalctl --vacuum-time={number}m ')
-                out = subprocess.check_output([f'journalctl --vacuum-time={number}m 2>&1'],shell=True).decode()
+                self.label.setText(self.label.text()+'\n'+f'pkexec journalctl --vacuum-time={number}m ')
+                out = subprocess.check_output([f'pkexec journalctl --vacuum-time={number}m 2>&1'],shell=True).decode()
                 self.label.setText(self.label.text()+'\n'+out)
                 
             elif combo_value=='seconds':
-                self.label.setText(self.label.text()+'\n'+f'journalctl --vacuum-time={number}s ')
-                out = subprocess.check_output([f'journalctl --vacuum-time={number}s 2>&1'],shell=True).decode()
+                self.label.setText(self.label.text()+'\n'+f'pkexec journalctl --vacuum-time={number}s ')
+                out = subprocess.check_output([f'pkexec journalctl --vacuum-time={number}s 2>&1'],shell=True).decode()
                 self.label.setText(self.label.text()+'\n'+out)
                 
         except Exception as e:
@@ -161,10 +161,10 @@ class Ui(QtWidgets.QMainWindow):
             number = int(self.ledt_size.text())
             self.initShowDetails()
             
-            print(f'journalctl --vacuum-size={number}{combo_value}')
-            self.label.setText(self.label.text()+'\n'+f'journalctl --vacuum-size={number}{combo_value}')
-            # out = subprocess.check_output([f'journalctl --vacuum-size={number}{combo_value}']).decode()
-            # self.label.setText(self.label.text()+'\n'+out)
+            print(f'pkexec journalctl --vacuum-size={number}{combo_value}')
+            self.label.setText(self.label.text()+'\n'+f'pkexec journalctl --vacuum-size={number}{combo_value}')
+            out = subprocess.check_output([f'pkexec journalctl --vacuum-size={number}{combo_value} 2>&1'],shell=True).decode()
+            self.label.setText(self.label.text()+'\n'+out)
             
 
         except Exception as e:

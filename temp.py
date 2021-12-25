@@ -1,6 +1,15 @@
+import subprocess
 
+out =subprocess.check_output(['swapon'],shell=True).decode()
 
-k='Hello there \nhi'
-print(k)
+linesCount = len(out.splitlines())
+print('linesCount',linesCount)
 
-print(k[-2:])
+out = subprocess.check_output([f'swapon | tail -n -{linesCount}'],shell=True).decode()
+print(out)
+lines = out.splitlines()
+for line in lines:
+    words = line.split()
+    for i in range(len(words)):
+        
+        
