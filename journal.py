@@ -7,10 +7,10 @@ import re
 import traceback
 from  journaldconf import readJournal,editJournal,setJournalConfig
 
-class Ui(QtWidgets.QMainWindow):
+class Ui(QtWidgets.QWidget):
     def __init__(self):
         super(Ui, self).__init__()
-        uic.loadUi('journalctl.ui', self)
+        uic.loadUi('journalctl_wid.ui', self)
         
     
         threading.Thread(target=self.setSizeLabel).start()

@@ -87,9 +87,16 @@
          <number>10</number>
         </property>
         <item>
-         <widget class="QPushButton" name="btn_add">
+         <widget class="QPushButton" name="btn_add_swap_partition">
           <property name="text">
-           <string>Add</string>
+           <string>Add swap partition</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="btn_add_swap_file">
+          <property name="text">
+           <string>Add swap file</string>
           </property>
          </widget>
         </item>
