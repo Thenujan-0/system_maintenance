@@ -32,7 +32,7 @@
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="QPushButton" name="pushButton_3">
+       <widget class="QPushButton" name="btn_swap">
         <property name="text">
          <string>swap memory</string>
         </property>

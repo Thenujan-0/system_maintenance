@@ -5,16 +5,15 @@ from time import sleep
 import threading
 import re
 
-class Ui(QtWidgets.QMainWindow):
+class Ui(QtWidgets.QWidget):
     def __init__(self):
         super(Ui, self).__init__()
-        uic.loadUi('home_cache.ui', self)
+        uic.loadUi('home_cache_wid.ui', self)
         
         self.btn_clear.clicked.connect(self.clear_btn_callback)
         self.btn_remove_manually.clicked.connect(self.remove_manually_btn_callback)
         self.btn_clear_all.clicked.connect(self.clear_all_btn_callback)
         self.lineEdit.returnPressed.connect(self.btn_clear.click)
-        
         
         
         # self.lineEdit.clicked.connect(self.lineEdit.selectAll())
