@@ -24,7 +24,7 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(559, 187)
+        MainWindow.resize(559, 297)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.gridLayout = QGridLayout(self.centralwidget)
@@ -106,6 +106,54 @@ class Ui_MainWindow(object):
 
         self.gridLayout_2.addLayout(self.horizontalLayout_3, 0, 0, 1, 1)
 
+        self.groupBox_2 = QGroupBox(self.groupBox)
+        self.groupBox_2.setObjectName(u"groupBox_2")
+        self.groupBox_2.setEnabled(True)
+        self.groupBox_2.setCheckable(True)
+        self.groupBox_2.setChecked(False)
+        self.gridLayout_3 = QGridLayout(self.groupBox_2)
+        self.gridLayout_3.setObjectName(u"gridLayout_3")
+        self.verticalLayout_4 = QVBoxLayout()
+        self.verticalLayout_4.setObjectName(u"verticalLayout_4")
+        self.horizontalLayout = QHBoxLayout()
+        self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.ledt_max_size = QLineEdit(self.groupBox_2)
+        self.ledt_max_size.setObjectName(u"ledt_max_size")
+        self.ledt_max_size.setMinimumSize(QSize(0, 0))
+        self.ledt_max_size.setMaximumSize(QSize(100, 16777215))
+
+        self.horizontalLayout.addWidget(self.ledt_max_size)
+
+        self.comboBoxMaxSize = QComboBox(self.groupBox_2)
+        self.comboBoxMaxSize.addItem("")
+        self.comboBoxMaxSize.addItem("")
+        self.comboBoxMaxSize.setObjectName(u"comboBoxMaxSize")
+
+        self.horizontalLayout.addWidget(self.comboBoxMaxSize)
+
+        self.btn_journal_max_size = QPushButton(self.groupBox_2)
+        self.btn_journal_max_size.setObjectName(u"btn_journal_max_size")
+
+        self.horizontalLayout.addWidget(self.btn_journal_max_size)
+
+        self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+
+        self.horizontalLayout.addItem(self.horizontalSpacer_2)
+
+
+        self.verticalLayout_4.addLayout(self.horizontalLayout)
+
+
+        self.gridLayout_3.addLayout(self.verticalLayout_4, 0, 0, 1, 1)
+
+        self.lbl_max_size = QLabel(self.groupBox_2)
+        self.lbl_max_size.setObjectName(u"lbl_max_size")
+
+        self.gridLayout_3.addWidget(self.lbl_max_size, 1, 0, 1, 1)
+
+
+        self.gridLayout_2.addWidget(self.groupBox_2, 1, 0, 1, 1)
+
 
         self.verticalLayout.addWidget(self.groupBox)
 
@@ -130,7 +178,7 @@ class Ui_MainWindow(object):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"remove journalctl logs", None))
         self.lbl_size.setText(QCoreApplication.translate("MainWindow", u"Current size of journal ctl is", None))
         self.groupBox.setTitle(QCoreApplication.translate("MainWindow", u"remove all but the most recent entries by size or time", None))
-        self.ledt_time.setText(QCoreApplication.translate("MainWindow", u"12", None))
+        self.ledt_time.setText(QCoreApplication.translate("MainWindow", u"3", None))
         self.comboBoxTime.setItemText(0, QCoreApplication.translate("MainWindow", u"months", None))
         self.comboBoxTime.setItemText(1, QCoreApplication.translate("MainWindow", u"weeks", None))
         self.comboBoxTime.setItemText(2, QCoreApplication.translate("MainWindow", u"days", None))
@@ -144,5 +192,12 @@ class Ui_MainWindow(object):
         self.comboBoxSize.setItemText(1, QCoreApplication.translate("MainWindow", u"G", None))
 
         self.btn_clear_size.setText(QCoreApplication.translate("MainWindow", u"clear", None))
+        self.groupBox_2.setTitle(QCoreApplication.translate("MainWindow", u"set a maximum size for the journal ", None))
+        self.ledt_max_size.setText(QCoreApplication.translate("MainWindow", u"500", None))
+        self.comboBoxMaxSize.setItemText(0, QCoreApplication.translate("MainWindow", u"M", None))
+        self.comboBoxMaxSize.setItemText(1, QCoreApplication.translate("MainWindow", u"G", None))
+
+        self.btn_journal_max_size.setText(QCoreApplication.translate("MainWindow", u"set", None))
+        self.lbl_max_size.setText(QCoreApplication.translate("MainWindow", u"maximum size is not set for the journal", None))
     # retranslateUi
 
