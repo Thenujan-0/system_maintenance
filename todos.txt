@@ -1,1 +1,2 @@
 journalctl permanent vacuum size limit
+make swappiness change functional

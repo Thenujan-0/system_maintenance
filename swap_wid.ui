@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>584</width>
-    <height>360</height>
+    <width>582</width>
+    <height>428</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -32,7 +32,7 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>562</width>
+          <width>560</width>
           <height>102</height>
          </rect>
         </property>
@@ -213,7 +213,7 @@
       </widget>
      </item>
      <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_5">
+      <layout class="QHBoxLayout" name="HLayout_swappiness">
        <property name="bottomMargin">
         <number>40</number>
        </property>
@@ -225,7 +225,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QLineEdit" name="lineEdit">
+        <widget class="QLineEdit" name="ledit_swappiness">
          <property name="text">
           <string>60</string>
          </property>
