@@ -52,12 +52,15 @@
         <item>
          <widget class="QPushButton" name="btn_cancel">
           <property name="text">
-           <string>cancel</string>
+           <string>Cancel</string>
           </property>
          </widget>
         </item>
         <item>
          <widget class="QPushButton" name="btn_select">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="text">
            <string>Select</string>
           </property>

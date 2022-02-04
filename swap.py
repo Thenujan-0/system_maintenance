@@ -3,13 +3,57 @@ from time import sleep
 from PyQt5 import QtWidgets , uic, QtCore,QtGui
 from PyQt5.QtCore import Qt 
 from PyQt5.QtGui import QPalette
-
 import sys
 import threading
 import traceback
 import subprocess
+import os
 
 
+PATH= os.path.dirname(os.path.realpath(__file__))
+
+
+
+
+
+
+# QIntValidator doesnt work the way i expected it to lets create our own validator for limiting the input between 
+# a range 
+
+class HashIntValidator(QtGui.QIntValidator):
+    """ warning this validator only return acceptable 
+    or invalid and just checks if the input is in range of two numbers """
+    min:int;
+    max:int;
+    def __init__(self,min,max):
+        super(HashIntValidator, self).__init__()
+        self.min=min
+        self.max=max
+
+
+    def validate(self,arg1,arg2):
+        print(arg1,arg2)
+        print(QtGui.QValidator.Acceptable)
+        
+        
+        try:
+
+            num = int(arg1)
+            
+            if num>=self.min and num<=self.max:
+                return(QtGui.QValidator.Acceptable,arg1,arg2)
+
+            else:
+                return(QtGui.QValidator.Invalid,arg1,arg2)
+
+        except:
+            if arg1=='':
+                return(QtGui.QValidator.Acceptable,arg1,arg2)
+            else:
+                return (QtGui.QValidator.Invalid, arg1,arg2)
+        
+
+        
 class WorkerSignals(QtCore.QObject):
     """
     Defines the signals available from a running worker thread
@@ -31,7 +75,6 @@ class WorkerSignals(QtCore.QObject):
     error =QtCore.pyqtSignal(tuple)
     result =QtCore.pyqtSignal(object)
     
-#! todo here define Worker class
 
 class Worker(QtCore.QRunnable):
     """
@@ -121,10 +164,71 @@ class Ui(QtWidgets.QWidget):
         self.timer.timeout.connect(self.setUiElements)
         self.timer.start(1000)
         
+        validator=QtGui.QIntValidator(0,100)
+        validator=HashIntValidator(0,100)
+        # print(validator.validate('11',1),'validaot ou')
+
+        validator.setRange(0,100)
+        self.ledit_swappiness.textChanged.connect(self.swappiness_changed)
+        self.ledit_swappiness.setValidator(validator)
+
+        #this only sets the tableWidget
         self.setUiElements()
+
+        self.update_ui_swappiness()
     
-    def systemdswap_callback(self):
-        pass
+    def update_ui_swappiness(self):
+        """ sets the current swappiness value in ui """
+
+        self.ledit_swappiness.blockSignals(True)
+        swappiness= subprocess.check_output(['cat /proc/sys/vm/swappiness'],shell=True).decode()
+        print(swappiness[-1],'last part of swappiness')
+        swappiness=swappiness.splitlines()[0]
+        if swappiness[-1]==' ':
+            swappiness= swappiness[:-1]
+        print('changing text in swappiness')
+        self.ledit_swappiness.setText(swappiness)
+        print('changed')
+        self.ledit_swappiness.blockSignals(False)
+
+
+    def insertInto(self,layout,index,widget):
+        """ a function to insert an element into a layout in a specific position"""
+        items=[]
+        for i in reversed(range(layout.count(),index)):
+            item =self.itemAt(i).widget()
+            item.setParent(None)
+            items.append(item)
+            print(item,'item')
+            
+        print('widget',widget)
+            
+        layout.addWidget(widget)
+        for i in reversed(range(len(items))):
+            layout.addWidget(items[i])
+
+    def swappiness_changed(self,text):
+        print('swappiness changed to %s'%text)
+        # subprocess.Popen([f'pkexec sysctl vm.swappiness={text}'],shell=True)
+        # self.update_ui_swappiness()
+        print(self.HLayout_swappiness.count())
+
+        last_index =self.HLayout_swappiness.count()-1
+        print(self.HLayout_swappiness.itemAt(last_index).widget())
+        if 'QPushButton' not in str(self.HLayout_swappiness.itemAt(last_index-1).widget()):
+
+            self.apply_swappiness= QtWidgets.QPushButton()
+            self.apply_swappiness.setText('Apply swappiness')
+            # 
+            # self.insertInto(self.HLayout_swappiness, last_index-2, self.apply_swappiness)
+            self.HLayout_swappiness.removeItem(self.HLayout_swappiness.itemAt(last_index))
+            self.HLayout_swappiness.addWidget(self.apply_swappiness)
+
+            #as the index is negative the space will be added to the end
+            self.HLayout_swappiness.insertStretch(-1)
+
+    # def systemdswap_callback(self):
+        # pass
     
     def enable_systemdswap(self):
         subprocess.run(['pkexec sh -c \' systemctl enable systemd-swap.service && systemctl start systemd-swap.service\' '],shell=True)
@@ -171,7 +275,11 @@ class Ui(QtWidgets.QWidget):
         worker.signals.finished.connect(self.setUiElements)
         
     def setUiElements(self): 
-        """Refreshes Ui elements"""
+        """Refreshes Ui elements  only refreshes swap table """
+
+
+
+
         sysd_swap= self.systemd_swap_status()
         # print(sysd_swap)
         if sysd_swap=='not installed':
@@ -295,17 +403,28 @@ class PartitionsUi(QtWidgets.QMainWindow):
         uic.loadUi('partitions.ui',self)
         self.total_partitions=0
         self.swap_available_partitions=[]
+
+
+        self.btn_select.clicked.connect(self.btn_select_callback)
+        self.btn_cancel.clicked.connect(self.btn_cancel_callback)
+        # a variable that stores the selection status of a partition by default no partition is selected so None
+        # it stores the row object of the selected partition
+        self.selected = None
+
+        # get the total memory and total swap
         out =subprocess.check_output(['free | tail -n 2 | awk \'{print $2}\''],shell=True).decode()
-        print(out)
         out = out.splitlines()
         ram = out[0]
         ram = int(ram)
+
+        #find the ram in giga bites
         ram_g =ram /1000000
         print(ram_g)
+        suitable_for_swap_count=0
         for device in device_list:
             item0 = QtWidgets.QTreeWidgetItem(self.treeWidget)
             item0.setText(0,device.name)
-            
+            # todo in temp2.py
             
             for partition in device.partitions:
                 self.total_partitions+=1
@@ -314,17 +433,11 @@ class PartitionsUi(QtWidgets.QMainWindow):
                 item.setText(1,partition.size)
                 if'G' in partition.size :
                     if float(partition.size[:-1])>8:
-                        # brush =QtGui.QBrush(QtGui.qRed(0))
-                        # item.setStyleSheet("color:red")
-                        # item.setForeground(0,brush)
-                        # item.setTextColor(QtGui.QRed())
-                        # QPalette().color(QPalette.Window)
-                        # item.setForeground(0,QPalette().color(QPalette.Highlight))
-                        # item.setText(0,item.text(0)+'(too big)')
+
                         f = item.font(0)
                         f.setStrikeOut(True)
                         item.setFont(0,f)
-
+                    
         
         if self.total_partitions < 6:
             self.treeWidget.expandAll()
@@ -334,11 +447,43 @@ class PartitionsUi(QtWidgets.QMainWindow):
         self.treeWidget.itemClicked.connect(self.treeWidget_on_item_clicked)
 
     def treeWidget_on_item_clicked(self,it,col):
+
+        # as the col argument isnt used anywhere else in the code fake arguments does get passed as col
+        # to this function so be carefull
+
+        self.selected= it
         # print(self.sender(),col,it)
         print(it.text(0))
-        if '(too big)' not in it.text(0):
+        f = it.font(0)
+        if not f.strikeOut():
             self.close()
 
+        else:
+            self.dialog_ui= DialogUi()
+            self.dialog_ui.label.setText('The partition you have selected is too large. Please select another partition')
+            self.dialog_ui.show()
+
+
+        self.btn_select.setEnabled(True)
+
+    def btn_select_callback(self):
+        self.treeWidget_on_item_clicked(self.selected,'fake argument')
+
+
+    def btn_cancel_callback(self):
+        self.close()
+
+class DialogUi(QtWidgets.QDialog):
+    def __init__(self):
+        super(DialogUi,self).__init__()
+        print(PATH)
+        uic.loadUi(f'{PATH}/dialog.ui',self)
+
+
+        self.btn_ok.clicked.connect(self.btn_ok_callback)
+
+    def btn_ok_callback(self):
+        self.close()
 
 if __name__ == "__main__":    
     app= QtWidgets.QApplication(sys.argv)
