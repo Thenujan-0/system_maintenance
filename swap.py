@@ -8,12 +8,25 @@ import threading
 import traceback
 import subprocess
 import os
+import logging
 
-
+HOME=os.getenv('HOME')
 PATH= os.path.dirname(os.path.realpath(__file__))
 
+subprocess.run([f'mkdir -p  {HOME}/.system_maintenance'],shell=True)
 
+if __name__ == '__main__':
 
+    subprocess.run([f'touch {HOME}/.system_maintenance/swap.log'],shell=True)
+
+    logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[
+        logging.FileHandler(f'{PATH}/.system_maintenance/swap.log'),
+        logging.StreamHandler()
+    ],
+)
 
 
 
@@ -21,8 +34,8 @@ PATH= os.path.dirname(os.path.realpath(__file__))
 # a range 
 
 class HashIntValidator(QtGui.QIntValidator):
-    """ warning this validator only return acceptable 
-    or invalid and just checks if the input is in range of two numbers """
+    """ warning this validator only returns acceptable 
+    or invalid and just checks if the input is in range of two numbers [arg1,arg2] """
     min:int;
     max:int;
     def __init__(self,min,max):
@@ -110,10 +123,10 @@ class Worker(QtCore.QRunnable):
         
         except:
             traceback.print_exc()
-            exctype,value = sys.exe_info()[:2]
+            exctype,value = sys.exc_info()[:2]
             self.signals.error.emit((exctype,value,traceback.format_exc()))
         else:
-            self.signls.result.emit(result)
+            self.signals.result.emit(result)
         finally:
             self.signals.finished.emit()
 
@@ -303,6 +316,13 @@ class Ui(QtWidgets.QWidget):
         else:
             out=''
         lines = out.splitlines()
+        # print(len(lines),'number of lines in  output '+f'swapon | tail -n -{linesCount-1}')
+
+
+        # the problem is that it wouldnt iterate over j if len(lines)==0 in order to avoid it
+        if len(lines)==0:
+            self.tableWidget.setRowCount(0)            
+
         for j in range(len(lines)):
             words = lines[j].split()
             # print(j)
@@ -333,19 +353,66 @@ class Ui(QtWidgets.QWidget):
             return 'not installed'
 
         else:
-            print("ERROR: couldnt find the status of systemd-swap")
+            logging.error("ERROR: couldnt find the status of systemd-swap")
         
     def btn_add_swap_partition_callback(self):
         readPartitions()
         self.partitions_ui =PartitionsUi()
         self.partitions_ui.show()        
         # self.btn_add_partition.clicked.connect(self.btn_add_callback)
-
+    def post_create_swap_file(self):
+        pass
     def btn_add_swapfile_callback(self):
         size = self.ledit_swapfile_size.text()
         size_extention=self.comboBox_swapfile_size_extention.currentText()
 
         print(size+size_extention)
+        self.add_swap_file(size, size_extention)
+
+    def add_swap_file(self,size,ext):
+        file_name=''
+        if os.path.exists('/swapfile'):
+            file_name='swapfile'
+
+        i=0
+        while True:
+            i+=1
+            if not os.path.exists(f'/swapfile{i}'):
+                file_name=f'/swapfile{i}'
+                break
+        if ext=='GB':
+            size_in_mb=int(size)*1024
+
+        self.progress_window=ProgressUi()
+        self.progress_window.show()
+
+        def create_swap_file():
+            # process=subprocess.Popen([f'stdbuf -i0 -o0 -e0 pkexec dd if=/dev/zero of=/swapfile bs=1M count={size_in_mb} status=progress'],
+            # stdout=subprocess.PIPE,
+            # stderr=subprocess.STDOUT,
+            # shell=True).communicate()
+            cmd = f'pkexec  dd if=/dev/zero of=/swapfile bs=1M count={size_in_mb} status=progress '
+            #todo for line in process.stdout update another window (which's ui hasnt yet been created by me)
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1, universal_newlines=True,shell=True)
+            for line in p.stdout:
+                sys.stdout.write(line)
+                self.progress_window.update_details(line)
+            p.wait()
+
+                
+                # if type(process.stdout.decode()) ==str:
+                    # for line in process.stdout:
+                        # print(line.decode())
+                        # print('line exists')
+            # for line in process.stdout:
+            #     self.progress_window.update_details(line.decode())
+            #     print(line,'line')
+            #     sys.stdout.write(line.decode())
+        worker=Worker(create_swap_file)
+        worker.signals.finished.connect(self.post_create_swap_file)
+        self.threadpool.start(worker)
+
+
 class Device():
     name='/dev/sdX'
     partitions=[]
@@ -484,6 +551,42 @@ class DialogUi(QtWidgets.QDialog):
 
     def btn_ok_callback(self):
         self.close()
+
+class ProgressUi(QtWidgets.QMainWindow):
+    def __init__(self):
+        super(ProgressUi,self).__init__()
+        uic.loadUi(f'{PATH}/progress.ui',self)
+        self.btn_show_details.clicked.connect(self.btn_show_details_callback)
+        self.lbl_details_text=''
+        self.lbl_details=None
+
+
+    def btn_show_details_callback(self):
+        btn =self.sender()
+        if btn.text() == 'Show details':
+            self.scrollArea = QtWidgets.QScrollArea(self.centralwidget)
+            self.scrollArea.setWidgetResizable(True)
+            self.scrollArea.setObjectName("scrollArea")
+            self.scrollAreaWidgetContents = QtWidgets.QWidget()
+            self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 266, 42))
+            self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
+            self.gridLayout_2 = QtWidgets.QGridLayout(self.scrollAreaWidgetContents)
+            self.gridLayout_2.setObjectName("gridLayout_2")
+            self.lbl_details = QtWidgets.QLabel(self.scrollAreaWidgetContents)
+            self.lbl_details.setObjectName("lbl_details")
+            self.gridLayout_2.addWidget(self.lbl_details, 0, 0, 1, 1)
+            self.scrollArea.setWidget(self.scrollAreaWidgetContents)
+            self.verticalLayout.addWidget(self.scrollArea)
+            self.lbl_details.setText(self.lbl_details_text)
+
+            btn.setText('Hide details')
+    def update_details(self,arg):
+
+        text=self.lbl_details_text
+        self.lbl_details_text = text+'\n'+arg
+
+        if self.lbl_details is not None:
+            self.lbl_details.setText(self.lbl_details_text)
 
 if __name__ == "__main__":    
     app= QtWidgets.QApplication(sys.argv)
