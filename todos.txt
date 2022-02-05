@@ -1,2 +1,4 @@
 journalctl permanent vacuum size limit
 make swappiness change functional
+replace the condition that blocks selecting a partition as swap from too big to unempty
+check if system is in ext4 for handling swap

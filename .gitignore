@@ -1,0 +1,5 @@
+temp*
+*.log
+*.pyc
+__pycache__/
+.qt_for_python/
