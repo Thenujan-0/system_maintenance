@@ -1,4 +1,4 @@
-temp*
+temp*.py
 *.log
 *.pyc
 __pycache__/
