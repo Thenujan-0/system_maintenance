@@ -9,6 +9,8 @@ import traceback
 import subprocess
 import os
 import logging
+import re
+import math
 
 HOME=os.getenv('HOME')
 PATH= os.path.dirname(os.path.realpath(__file__))
@@ -275,7 +277,7 @@ class Ui(QtWidgets.QWidget):
         except TypeError:
             pass
         if new_handler is not None:
-            print(signal)
+            # print(signal)
             signal.connect(new_handler)
     
     def refresh_ui_background(self):
@@ -289,7 +291,6 @@ class Ui(QtWidgets.QWidget):
         
     def setUiElements(self): 
         """Refreshes Ui elements  only refreshes swap table """
-
 
 
 
@@ -335,6 +336,7 @@ class Ui(QtWidgets.QWidget):
                 item = QtWidgets.QTableWidgetItem()
                 item.setText(words[i])
                 self.tableWidget.setItem(j, i, item)
+
     def systemd_swap_status(self):
         """returns 'active' or 'not installed' or 'not active' 
         #! todo here maybe not here but continue from here
@@ -361,7 +363,8 @@ class Ui(QtWidgets.QWidget):
         self.partitions_ui.show()        
         # self.btn_add_partition.clicked.connect(self.btn_add_callback)
     def post_create_swap_file(self):
-        pass
+        print('created swap file')
+        # todo 
     def btn_add_swapfile_callback(self):
         size = self.ledit_swapfile_size.text()
         size_extention=self.comboBox_swapfile_size_extention.currentText()
@@ -380,23 +383,43 @@ class Ui(QtWidgets.QWidget):
             if not os.path.exists(f'/swapfile{i}'):
                 file_name=f'/swapfile{i}'
                 break
-        if ext=='GB':
-            size_in_mb=int(size)*1024
+        
 
         self.progress_window=ProgressUi()
         self.progress_window.show()
 
-        def create_swap_file():
+        def create_swap_file(size,ext):
             # process=subprocess.Popen([f'stdbuf -i0 -o0 -e0 pkexec dd if=/dev/zero of=/swapfile bs=1M count={size_in_mb} status=progress'],
             # stdout=subprocess.PIPE,
             # stderr=subprocess.STDOUT,
             # shell=True).communicate()
+            self.progress_window.lbl_status.setText('Creating swap file')
+            if ext=='GB':
+                size_in_mb=int(size)*1024
+
             cmd = f'pkexec  dd if=/dev/zero of=/swapfile bs=1M count={size_in_mb} status=progress '
-            #todo for line in process.stdout update another window (which's ui hasnt yet been created by me)
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1, universal_newlines=True,shell=True)
             for line in p.stdout:
                 sys.stdout.write(line)
                 self.progress_window.update_details(line)
+                patern=r'\d*.?\d [A-Z][a-z][A-Z]'
+                matches =re.search(patern,line)
+                if matches is not None:
+                    copied=matches.group(0)
+                    print(copied,'copied')
+                    ext_patern=r'[A-Z][a-z][A-Z]'
+                    size_patern=r'\d+.?\d'
+                    ext_match=re.search(ext_patern,copied)
+                    size_match=re.search(size_patern,copied)
+                    if ext_match and size_match:
+                        print(size_match.group(0),'size match',ext_match.group(0),'ext match')
+                        copied_size=size_match.group(0)
+                        copied_ext=ext_match.group(0)
+
+                        #dont know how it works but when i try to create a 3GB swap file it ends up creating 3GiB swap file So..
+                        if copied_ext.replace('i','')== ext:
+                            percentage = math.floor(100 * (float(copied_size)/float(size)))
+                            self.progress_window.progressBar.setValue(percentage)
             p.wait()
 
                 
@@ -408,7 +431,7 @@ class Ui(QtWidgets.QWidget):
             #     self.progress_window.update_details(line.decode())
             #     print(line,'line')
             #     sys.stdout.write(line.decode())
-        worker=Worker(create_swap_file)
+        worker=Worker(create_swap_file,ext=ext,size=size)
         worker.signals.finished.connect(self.post_create_swap_file)
         self.threadpool.start(worker)
 
@@ -583,7 +606,7 @@ class ProgressUi(QtWidgets.QMainWindow):
     def update_details(self,arg):
 
         text=self.lbl_details_text
-        self.lbl_details_text = text+'\n'+arg
+        self.lbl_details_text = arg
 
         if self.lbl_details is not None:
             self.lbl_details.setText(self.lbl_details_text)
