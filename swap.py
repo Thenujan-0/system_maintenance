@@ -11,7 +11,7 @@ import os
 import logging
 import re
 import math
-
+from functools import partial
 HOME=os.getenv('HOME')
 PATH= os.path.dirname(os.path.realpath(__file__))
 
@@ -124,9 +124,11 @@ class Worker(QtCore.QRunnable):
             result = self.fn(*self.args,**self.kwargs)
         
         except:
+            print('caught error in worker class')
             traceback.print_exc()
             exctype,value = sys.exc_info()[:2]
             self.signals.error.emit((exctype,value,traceback.format_exc()))
+            # self.result=-1
         else:
             self.signals.result.emit(result)
         finally:
@@ -141,6 +143,8 @@ class Ui(QtWidgets.QWidget):
         self.threadpool=QtCore.QThreadPool()
         
 
+        self.tableWidget_selected_row_index=None
+
         out =subprocess.check_output(['swapon'],shell=True).decode()
         linesCount = len(out.splitlines())
         print('linesCount',linesCount)
@@ -149,9 +153,15 @@ class Ui(QtWidgets.QWidget):
         else:
             out=''
         lines = out.splitlines()
+
+
+        self.tableWidget.setSelectionBehavior(QtWidgets.QTableView.SelectRows)
+
+
         for j in range(len(lines)):
             words = lines[j].split()
             self.tableWidget.setRowCount(self.tableWidget.rowCount()+1)
+
 
             
             for i in range(len(words)):
@@ -161,7 +171,12 @@ class Ui(QtWidgets.QWidget):
                 item.setText(words[i])
                 self.tableWidget.setItem(j, i, item)
         
-        
+
+        #prevent tables horizontal header from being highlighted when a table element is selected
+        item=self.tableWidget.horizontalHeader()
+        # item.setSelectionMode(QtWidgets.QAbstractItemView.NoSelection
+        # )
+        item.setHighlightSections(False)
         
 
         header = self.tableWidget.horizontalHeader()
@@ -171,6 +186,7 @@ class Ui(QtWidgets.QWidget):
         self.btn_add_swapfile.clicked.connect(self.btn_add_swapfile_callback)
         self.onlyInt =QtGui.QIntValidator()
         self.ledit_swapfile_size.setValidator(self.onlyInt)
+        self.tableWidget.clicked.connect(self.tableWidget_onclick)
 
 
 
@@ -191,6 +207,10 @@ class Ui(QtWidgets.QWidget):
         self.setUiElements()
 
         self.update_ui_swappiness()
+    
+    def tableWidget_onclick(self):
+        self.tableWidget_selected_row_index=self.tableWidget.selectedIndexes()[0].row()
+    
     
     def update_ui_swappiness(self):
         """ sets the current swappiness value in ui """
@@ -253,7 +273,7 @@ class Ui(QtWidgets.QWidget):
         subprocess.run(['pkexec sh -c \' systemctl stop systemd-swap.service && systemctl disable systemd-swap\''],shell=True)
         self.setUiElements()
     
-    def post_install(self):
+    def post_install(self,result):
         pass
     def install_enable_systemdswap(self):
         self.install_systemdswap()
@@ -261,7 +281,7 @@ class Ui(QtWidgets.QWidget):
         
     def install_systemdswap(self):
         worker=Worker(self.installer)
-        worker.signals.finished.connect(self.post_install)
+        worker.signals.result.connect(self.post_install)
         self.threadpool.start(worker)
 
     def installer(self):
@@ -287,7 +307,7 @@ class Ui(QtWidgets.QWidget):
                 self.setUiElements()
                 self.signals.finished.emit
         worker = Worker(refresher)
-        worker.signals.finished.connect(self.setUiElements)
+        worker.signals.result.connect(self.setUiElements)
         
     def setUiElements(self): 
         """Refreshes Ui elements  only refreshes swap table """
@@ -335,7 +355,17 @@ class Ui(QtWidgets.QWidget):
                 
                 item = QtWidgets.QTableWidgetItem()
                 item.setText(words[i])
+
+                #make item non editable
+                item.setFlags( Qt.ItemIsSelectable |  Qt.ItemIsEnabled )
                 self.tableWidget.setItem(j, i, item)
+        if self.tableWidget_selected_row_index is not None:
+            self.tableWidget.selectRow(self.tableWidget_selected_row_index)
+            print(self.tableWidget_selected_row_index,'selected row index')
+        
+        #stop horizontal header of the table from being highlighted
+        item=self.tableWidget.horizontalHeader()
+        item.setHighlightSections(False)
 
     def systemd_swap_status(self):
         """returns 'active' or 'not installed' or 'not active' 
@@ -362,8 +392,55 @@ class Ui(QtWidgets.QWidget):
         self.partitions_ui =PartitionsUi()
         self.partitions_ui.show()        
         # self.btn_add_partition.clicked.connect(self.btn_add_callback)
-    def post_create_swap_file(self):
-        print('created swap file')
+    def post_create_swap_file(self,file_name,result):
+
+        #catch user authentication error
+        if not self.caught_authotization_error:
+
+            print('result is ',result)
+            pro_win=self.progress_window
+            lbl_status=pro_win.lbl_status
+            print('created swap file')
+            filename=file_name
+            pro_win.update_details_text('setting the created file as swap file')
+            def set_swap_file():
+                subprocess.Popen([f'pkexec sh -c "chmod 600 {filename} && mkswap {filename} && swapon {filename}"'],shell=True)
+
+            def post_set_swap_file(self,file_name,result):
+                print('result is',result)
+                print('finished setting up swap file')
+                pro_win.update_details_text('Finished setting up swap file')
+                self.main_process_running=False
+
+
+                #edit /etc/fstab
+
+                with open('/etc/fstab') as f:
+                    data = f.read()
+                
+                lines =data.splitlines()
+                already_configured=False
+                for line in lines:
+                    if line =='echo /swapfile none swap defaults 0 0':
+                        already_configured=True
+                        break
+
+                if not already_configured:
+                    print('not already configured')
+                    subprocess.Popen(['pkexec bash -c "echo /swapfile none swap defaults 0 0 >> /etc/fstab"'],shell=True)
+
+
+
+            worker=Worker(set_swap_file)
+            worker.signals.result.connect(partial(post_set_swap_file,self,file_name))
+            self.threadpool.start(worker)
+
+        else:
+            self.progress_window.close()
+            #a variable used to tract if some main process (worker thread )is running 
+            # as we use variables to tract if processes exited sucessfully
+            self.main_process_running=False
+
         # todo 
     def btn_add_swapfile_callback(self):
         size = self.ledit_swapfile_size.text()
@@ -374,21 +451,21 @@ class Ui(QtWidgets.QWidget):
 
     def add_swap_file(self,size,ext):
         file_name=''
-        if os.path.exists('/swapfile'):
+        if not os.path.exists('/swapfile'):
             file_name='swapfile'
-
-        i=0
-        while True:
-            i+=1
-            if not os.path.exists(f'/swapfile{i}'):
-                file_name=f'/swapfile{i}'
-                break
+        else:
+            i=0
+            while True:
+                i+=1
+                if not os.path.exists(f'/swapfile{i}'):
+                    file_name=f'/swapfile{i}'
+                    break
         
-
+        print(file_name,'file_name for swap')
         self.progress_window=ProgressUi()
         self.progress_window.show()
 
-        def create_swap_file(size,ext):
+        def create_swap_file(self,size,ext,file_name):
             # process=subprocess.Popen([f'stdbuf -i0 -o0 -e0 pkexec dd if=/dev/zero of=/swapfile bs=1M count={size_in_mb} status=progress'],
             # stdout=subprocess.PIPE,
             # stderr=subprocess.STDOUT,
@@ -396,12 +473,26 @@ class Ui(QtWidgets.QWidget):
             self.progress_window.lbl_status.setText('Creating swap file')
             if ext=='GB':
                 size_in_mb=int(size)*1024
+            elif ext=='TB':
+                size_in_mb=int(size)*1024*1024
+            else:
+                logger.error('Error:Unrecognized extension when creating swap file')
 
-            cmd = f'pkexec  dd if=/dev/zero of=/swapfile bs=1M count={size_in_mb} status=progress '
+            cmd = f'pkexec  dd if=/dev/zero of={file_name} bs=1M count={size_in_mb} status=progress '
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1, universal_newlines=True,shell=True)
+            
+            self.caught_authotization_error = False
+            
             for line in p.stdout:
+                
+                #check if user didnt finish polkit authorization
+                if 'Error executing command as another user: Not authorized' in line:
+                    self.caught_authotization_error=True
+                    break
+
+
                 sys.stdout.write(line)
-                self.progress_window.update_details(line)
+                self.progress_window.update_details_text(line)
                 patern=r'\d*.?\d [A-Z][a-z][A-Z]'
                 matches =re.search(patern,line)
                 if matches is not None:
@@ -428,11 +519,11 @@ class Ui(QtWidgets.QWidget):
                         # print(line.decode())
                         # print('line exists')
             # for line in process.stdout:
-            #     self.progress_window.update_details(line.decode())
+            #     self.progress_window.update_details_text(line.decode())
             #     print(line,'line')
             #     sys.stdout.write(line.decode())
-        worker=Worker(create_swap_file,ext=ext,size=size)
-        worker.signals.finished.connect(self.post_create_swap_file)
+        worker=Worker(create_swap_file,self,file_name=file_name,ext=ext,size=size)
+        worker.signals.result.connect(partial(self.post_create_swap_file,file_name))
         self.threadpool.start(worker)
 
 
@@ -603,7 +694,7 @@ class ProgressUi(QtWidgets.QMainWindow):
             self.lbl_details.setText(self.lbl_details_text)
 
             btn.setText('Hide details')
-    def update_details(self,arg):
+    def update_details_text(self,arg):
 
         text=self.lbl_details_text
         self.lbl_details_text = arg

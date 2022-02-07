@@ -27,6 +27,7 @@ class Ui(QtWidgets.QMainWindow):
         else:
             self.cacheWindow.activateWindow()
             self.cacheWindow.raise_()
+            
     def btn_rm_journal_callback(self):
         import journal
         
