@@ -89,7 +89,12 @@ class WorkerSignals(QtCore.QObject):
     finished =QtCore.pyqtSignal()
     error =QtCore.pyqtSignal(tuple)
     result =QtCore.pyqtSignal(object)
-    
+
+    #these two are created for handling swap file creation and configuration
+    authentication_error=QtCore.pyqtSignal()
+    percentage=QtCore.pyqtSignal(int)
+    authentication_success=QtCore.pyqtSignal()
+    output=QtCore.pyqtSignal(str)
 
 class Worker(QtCore.QRunnable):
     """
@@ -134,6 +139,50 @@ class Worker(QtCore.QRunnable):
         finally:
             self.signals.finished.emit()
 
+
+class swapWorker(QtCore.QRunnable):
+    """
+    Worker Thread designed for creating and configura=ing a swap file
+    Inherits from QRunnable to handler worker thread setup , signals and wrap up.
+    
+    :param callback : this function cllback to run on this worker thread supplied args
+            and kwargs will be passed through the runner
+            
+    :type callback :function
+    :param args: Arguments to pass the callbck function
+    :param kwargs: Keywords to pss the callback function
+    
+    
+    """
+    def __init__(self,fn,*args,**kwargs):
+        super(swapWorker,self).__init__()
+         #store constructor arguments as they will be reused for procesing
+        self.fn =fn
+        self.args=args
+        self.kwargs=kwargs
+        self.signals=WorkerSignals()
+
+    @QtCore.pyqtSlot()
+    def run(self):
+        
+        """
+        initialise the runner function with passed args and kwargs
+        """
+        try:
+            result=self.fn(*self.args,**self.kwargs)
+
+        except:
+            traceback.print_exc()
+            exectype,value=sys.exc_info()[:2]
+            self.signals.error.emit((exctype,value,traceback.format_exc()))
+
+        else:
+            self.signals.result.emit(value)
+        
+        finally:
+            self.signals.finished.emit()
+
+
 class Ui(QtWidgets.QWidget):
     def __init__(self):
         super(Ui, self).__init__()
@@ -156,7 +205,7 @@ class Ui(QtWidgets.QWidget):
 
 
         self.tableWidget.setSelectionBehavior(QtWidgets.QTableView.SelectRows)
-
+        self.btn_remove.setEnabled(False)
 
         for j in range(len(lines)):
             words = lines[j].split()
@@ -187,7 +236,9 @@ class Ui(QtWidgets.QWidget):
         self.onlyInt =QtGui.QIntValidator()
         self.ledit_swapfile_size.setValidator(self.onlyInt)
         self.tableWidget.clicked.connect(self.tableWidget_onclick)
-
+        self.btn_remove.clicked.connect(self.btn_remove_callback)
+        self.tableWidget_selected_row_index=None
+        self.tableWidget_selected=None
 
 
         
@@ -210,6 +261,8 @@ class Ui(QtWidgets.QWidget):
     
     def tableWidget_onclick(self):
         self.tableWidget_selected_row_index=self.tableWidget.selectedIndexes()[0].row()
+        self.tableWidget_selected=self.tableWidget.itemAt(0,self.tableWidget_selected_row_index).text()
+        self.btn_remove.setEnabled(True)
     
     
     def update_ui_swappiness(self):
@@ -287,6 +340,11 @@ class Ui(QtWidgets.QWidget):
     def installer(self):
         self.install_output =subprocess.check_output(['pkexec pacman -S systemd-swap --noconfirm'],shell=True)
     
+    def btn_remove_callback(self):
+        if self.tableWidget_selected is not None:
+            file_name = self.tableWidget_selected
+            subprocess.Popen([f'pkexec python {PATH}/swap_remover.py {file_name}'],shell=True)
+            
     def reconnect(self,signal ,new_handler=None,old_handler=None):
         try:
             if old_handler is not None:
@@ -361,7 +419,6 @@ class Ui(QtWidgets.QWidget):
                 self.tableWidget.setItem(j, i, item)
         if self.tableWidget_selected_row_index is not None:
             self.tableWidget.selectRow(self.tableWidget_selected_row_index)
-            print(self.tableWidget_selected_row_index,'selected row index')
         
         #stop horizontal header of the table from being highlighted
         item=self.tableWidget.horizontalHeader()
@@ -392,128 +449,56 @@ class Ui(QtWidgets.QWidget):
         self.partitions_ui =PartitionsUi()
         self.partitions_ui.show()        
         # self.btn_add_partition.clicked.connect(self.btn_add_callback)
-    def post_create_swap_file(self,file_name,result):
+   
 
-        #catch user authentication error
-        if not self.caught_authotization_error:
-
-            print('result is ',result)
-            pro_win=self.progress_window
-            lbl_status=pro_win.lbl_status
-            print('created swap file')
-            filename=file_name
-            pro_win.update_details_text('setting the created file as swap file')
-            def set_swap_file():
-                subprocess.Popen([f'pkexec sh -c "chmod 600 {filename} && mkswap {filename} && swapon {filename}"'],shell=True)
-
-            def post_set_swap_file(self,file_name,result):
-                print('result is',result)
-                print('finished setting up swap file')
-                pro_win.update_details_text('Finished setting up swap file')
-                self.main_process_running=False
-
-
-                #edit /etc/fstab
-
-                with open('/etc/fstab') as f:
-                    data = f.read()
-                
-                lines =data.splitlines()
-                already_configured=False
-                for line in lines:
-                    if line =='echo /swapfile none swap defaults 0 0':
-                        already_configured=True
-                        break
-
-                if not already_configured:
-                    print('not already configured')
-                    subprocess.Popen(['pkexec bash -c "echo /swapfile none swap defaults 0 0 >> /etc/fstab"'],shell=True)
-
-
-
-            worker=Worker(set_swap_file)
-            worker.signals.result.connect(partial(post_set_swap_file,self,file_name))
-            self.threadpool.start(worker)
-
-        else:
-            self.progress_window.close()
-            #a variable used to tract if some main process (worker thread )is running 
-            # as we use variables to tract if processes exited sucessfully
-            self.main_process_running=False
-
-        # todo 
     def btn_add_swapfile_callback(self):
         size = self.ledit_swapfile_size.text()
         size_extention=self.comboBox_swapfile_size_extention.currentText()
-
+        self.progress_window=ProgressUi()
+        self.progress_window.lbl_status.setText('Creating swap file please wait...')
         print(size+size_extention)
         self.add_swap_file(size, size_extention)
 
     def add_swap_file(self,size,ext):
-        file_name=''
-        if not os.path.exists('/swapfile'):
-            file_name='swapfile'
-        else:
-            i=0
-            while True:
-                i+=1
-                if not os.path.exists(f'/swapfile{i}'):
-                    file_name=f'/swapfile{i}'
-                    break
         
-        print(file_name,'file_name for swap')
-        self.progress_window=ProgressUi()
-        self.progress_window.show()
-
-        def create_swap_file(self,size,ext,file_name):
-            # process=subprocess.Popen([f'stdbuf -i0 -o0 -e0 pkexec dd if=/dev/zero of=/swapfile bs=1M count={size_in_mb} status=progress'],
-            # stdout=subprocess.PIPE,
-            # stderr=subprocess.STDOUT,
-            # shell=True).communicate()
-            self.progress_window.lbl_status.setText('Creating swap file')
-            if ext=='GB':
-                size_in_mb=int(size)*1024
-            elif ext=='TB':
-                size_in_mb=int(size)*1024*1024
-            else:
-                logger.error('Error:Unrecognized extension when creating swap file')
-
-            cmd = f'pkexec  dd if=/dev/zero of={file_name} bs=1M count={size_in_mb} status=progress '
+        def main_runner(worker,size,ext):
+            print('recieved worker is',worker)
+            cmd = f'python {PATH}/swap_.py {size} {ext} '
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1, universal_newlines=True,shell=True)
-            
-            self.caught_authotization_error = False
-            
+             
+            # print('gonna read lines')
             for line in p.stdout:
-                
+                # print('handling lines')
                 #check if user didnt finish polkit authorization
                 if 'Error executing command as another user: Not authorized' in line:
-                    self.caught_authotization_error=True
+                    worker.signals.authentication_error.emit()
                     break
-
+                
+                elif'Im root' in line:
+                    worker.signals.authentication_success.emit()
 
                 sys.stdout.write(line)
-                self.progress_window.update_details_text(line)
-                patern=r'\d*.?\d [A-Z][a-z][A-Z]'
-                matches =re.search(patern,line)
-                if matches is not None:
-                    copied=matches.group(0)
-                    print(copied,'copied')
-                    ext_patern=r'[A-Z][a-z][A-Z]'
-                    size_patern=r'\d+.?\d'
-                    ext_match=re.search(ext_patern,copied)
-                    size_match=re.search(size_patern,copied)
-                    if ext_match and size_match:
-                        print(size_match.group(0),'size match',ext_match.group(0),'ext match')
-                        copied_size=size_match.group(0)
-                        copied_ext=ext_match.group(0)
 
-                        #dont know how it works but when i try to create a 3GB swap file it ends up creating 3GiB swap file So..
-                        if copied_ext.replace('i','')== ext:
-                            percentage = math.floor(100 * (float(copied_size)/float(size)))
-                            self.progress_window.progressBar.setValue(percentage)
+                worker.signals.output.emit(line)
+                # print('reading lines')
+                # self.progress_window.update_details_text(line)
+                if 'creating swap file completed' in line and line[-2] == '%':
+                    try:
+                        #last word is percentage eg: 10%
+                        percentage=math.floor(float(line.split()[-1][:-1]))
+                        worker.signals.percentage.emit(percentage)
+                        # print('emitted percentage signal')
+                        # print('percentage is',percentage)
+                    except TypeError:
+                        print('caught type error')
+                        print(traceback.format_exc())
+                elif len(line)>2:
+                    # print('this line doesnt have percentage last letter in line is',line[-2])
+                    pass
+
             p.wait()
 
-                
+                    
                 # if type(process.stdout.decode()) ==str:
                     # for line in process.stdout:
                         # print(line.decode())
@@ -522,9 +507,37 @@ class Ui(QtWidgets.QWidget):
             #     self.progress_window.update_details_text(line.decode())
             #     print(line,'line')
             #     sys.stdout.write(line.decode())
-        worker=Worker(create_swap_file,self,file_name=file_name,ext=ext,size=size)
-        worker.signals.result.connect(partial(self.post_create_swap_file,file_name))
+
+        def progress_percentage(percentage):
+            print('recieved signal percentage',percentage)
+            self.progress_window.progressBar.setValue(percentage)
+
+        def authentication_error_handler():
+            print('recieved signal error authentication_error_handler')
+
+            app.progress_window.close()
+
+        def authentication_success_handler():
+            print('recieved signal authentication success')
+
+            
+            self.progress_window.show()
+        
+        def finished():
+            window.progress_window.close()
+        
+        # passing None as cannot pass worker before creating it
+        worker=Worker(main_runner,worker=None,ext=ext,size=size)
+        worker.kwargs['worker']=worker
+
+        # worker.signals.result.connect(partial(self.post_create_swap_file,file_name))
+        worker.signals.authentication_error.connect(authentication_error_handler)
+        worker.signals.percentage.connect(progress_percentage)
+        worker.signals.authentication_success.connect(authentication_success_handler)
+        worker.signals.output.connect(self.progress_window.update_details_text)
+        worker.signals.finished.connect(finished)
         self.threadpool.start(worker)
+
 
 
 class Device():
