@@ -47,8 +47,8 @@ class HashIntValidator(QtGui.QIntValidator):
 
 
     def validate(self,arg1,arg2):
-        print(arg1,arg2)
-        print(QtGui.QValidator.Acceptable)
+        # print(arg1,arg2)
+        # print(QtGui.QValidator.Acceptable)
         
         
         try:
@@ -91,7 +91,6 @@ class WorkerSignals(QtCore.QObject):
     result =QtCore.pyqtSignal(object)
 
     #these two are created for handling swap file creation and configuration
-    authentication_error=QtCore.pyqtSignal()
     percentage=QtCore.pyqtSignal(int)
     authentication_success=QtCore.pyqtSignal()
     output=QtCore.pyqtSignal(str)
@@ -196,7 +195,7 @@ class Ui(QtWidgets.QWidget):
 
         out =subprocess.check_output(['swapon'],shell=True).decode()
         linesCount = len(out.splitlines())
-        print('linesCount',linesCount)
+        # print('linesCount',linesCount)
         if linesCount>0:
             out = subprocess.check_output([f'swapon | tail -n -{linesCount-1}'],shell=True).decode()
         else:
@@ -270,13 +269,13 @@ class Ui(QtWidgets.QWidget):
 
         self.ledit_swappiness.blockSignals(True)
         swappiness= subprocess.check_output(['cat /proc/sys/vm/swappiness'],shell=True).decode()
-        print(swappiness[-1],'last part of swappiness')
+        # print(swappiness[-1],'last part of swappiness')
         swappiness=swappiness.splitlines()[0]
         if swappiness[-1]==' ':
             swappiness= swappiness[:-1]
-        print('changing text in swappiness')
+        # print('changing text in swappiness')
         self.ledit_swappiness.setText(swappiness)
-        print('changed')
+        # print('changed')
         self.ledit_swappiness.blockSignals(False)
 
 
@@ -287,22 +286,22 @@ class Ui(QtWidgets.QWidget):
             item =self.itemAt(i).widget()
             item.setParent(None)
             items.append(item)
-            print(item,'item')
+            # print(item,'item')
             
-        print('widget',widget)
+        # print('widget',widget)
             
         layout.addWidget(widget)
         for i in reversed(range(len(items))):
             layout.addWidget(items[i])
 
     def swappiness_changed(self,text):
-        print('swappiness changed to %s'%text)
+        # print('swappiness changed to %s'%text)
         # subprocess.Popen([f'pkexec sysctl vm.swappiness={text}'],shell=True)
         # self.update_ui_swappiness()
-        print(self.HLayout_swappiness.count())
+        # print(self.HLayout_swappiness.count())
 
         last_index =self.HLayout_swappiness.count()-1
-        print(self.HLayout_swappiness.itemAt(last_index).widget())
+        # print(self.HLayout_swappiness.itemAt(last_index).widget())
         if 'QPushButton' not in str(self.HLayout_swappiness.itemAt(last_index-1).widget()):
 
             self.apply_swappiness= QtWidgets.QPushButton()
@@ -319,6 +318,14 @@ class Ui(QtWidgets.QWidget):
         # pass
     
     def enable_systemdswap(self):
+        out =subprocess.check_output(["swapon --show | wc -l"],shell=True).decode()
+        if out!='0':
+            # a window to mention that other swaps have to be removed
+            dialog1=DialogUi(btn_cancel=True)
+            dialog1.label.setText("In order to enable systemd swap other swaps have to be removed are you sure want to continue?")
+            dialog.show()
+        #disable all other swap   
+
         subprocess.run(['pkexec sh -c \' systemctl enable systemd-swap.service && systemctl start systemd-swap.service\' '],shell=True)
         self.setUiElements()
     
@@ -456,13 +463,13 @@ class Ui(QtWidgets.QWidget):
         size_extention=self.comboBox_swapfile_size_extention.currentText()
         self.progress_window=ProgressUi()
         self.progress_window.lbl_status.setText('Creating swap file please wait...')
-        print(size+size_extention)
+        # print(size+size_extention)
         self.add_swap_file(size, size_extention)
 
     def add_swap_file(self,size,ext):
         
         def main_runner(worker,size,ext):
-            print('recieved worker is',worker)
+            # print('recieved worker is',worker)
             cmd = f'python {PATH}/swap_.py {size} {ext} '
             p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, bufsize=1, universal_newlines=True,shell=True)
              
@@ -471,15 +478,14 @@ class Ui(QtWidgets.QWidget):
                 # print('handling lines')
                 #check if user didnt finish polkit authorization
                 if 'Error executing command as another user: Not authorized' in line:
-                    worker.signals.authentication_error.emit()
                     break
                 
                 elif'Im root' in line:
                     worker.signals.authentication_success.emit()
 
                 sys.stdout.write(line)
-
-                worker.signals.output.emit(line)
+                if 'Im root' not in line and 'creating swap file completed' not in line:
+                    worker.signals.output.emit(line)
                 # print('reading lines')
                 # self.progress_window.update_details_text(line)
                 if 'creating swap file completed' in line and line[-2] == '%':
@@ -509,32 +515,38 @@ class Ui(QtWidgets.QWidget):
             #     sys.stdout.write(line.decode())
 
         def progress_percentage(percentage):
-            print('recieved signal percentage',percentage)
-            self.progress_window.progressBar.setValue(percentage)
+            # print('recieved signal percentage',percentage)
+            if percentage==100:
+                percentage=99
+                # 99 to avoid reaching 100 as soon as swap file has been created as it takes time to configure it
+            self.progress_window.progressBar.setValue(percentage-1)
 
-        def authentication_error_handler():
-            print('recieved signal error authentication_error_handler')
 
-            app.progress_window.close()
 
         def authentication_success_handler():
-            print('recieved signal authentication success')
+            # print('recieved signal authentication success')
 
             
             self.progress_window.show()
         
         def finished():
             window.progress_window.close()
+
+        def output_hander(output):
+            self.progress_window.update_details_text(output)
+            if self.progress_window.scrollArea is not None:
+                area=self.progress_window.scrollArea
+                vbar=area.verticalScrollBar()
+                vbar.setValue(vbar.maximum())
         
         # passing None as cannot pass worker before creating it
         worker=Worker(main_runner,worker=None,ext=ext,size=size)
         worker.kwargs['worker']=worker
 
         # worker.signals.result.connect(partial(self.post_create_swap_file,file_name))
-        worker.signals.authentication_error.connect(authentication_error_handler)
         worker.signals.percentage.connect(progress_percentage)
         worker.signals.authentication_success.connect(authentication_success_handler)
-        worker.signals.output.connect(self.progress_window.update_details_text)
+        worker.signals.output.connect(output_hander)
         worker.signals.finished.connect(finished)
         self.threadpool.start(worker)
 
@@ -568,7 +580,6 @@ def readPartitions():
     target_lines=[]
     for line in lines:
         if line[:7] =='/dev/sd':
-            print(line)
             target_lines.append(line)
             
     
@@ -613,11 +624,11 @@ class PartitionsUi(QtWidgets.QMainWindow):
 
         #find the ram in giga bites
         ram_g =ram /1000000
-        print(ram_g)
         suitable_for_swap_count=0
         for device in device_list:
             item0 = QtWidgets.QTreeWidgetItem(self.treeWidget)
             item0.setText(0,device.name)
+
             # todo in temp2.py
             
             for partition in device.partitions:
@@ -647,13 +658,13 @@ class PartitionsUi(QtWidgets.QMainWindow):
 
         self.selected= it
         # print(self.sender(),col,it)
-        print(it.text(0))
+        # print(it.text(0))
         f = it.font(0)
         if not f.strikeOut():
             self.close()
 
         else:
-            self.dialog_ui= DialogUi()
+            self.dialog_ui= DialogUi(btn_cancel=False)
             self.dialog_ui.label.setText('The partition you have selected is too large. Please select another partition')
             self.dialog_ui.show()
 
@@ -668,11 +679,12 @@ class PartitionsUi(QtWidgets.QMainWindow):
         self.close()
 
 class DialogUi(QtWidgets.QDialog):
-    def __init__(self):
+    def __init__(self,btn_cancel=True):
         super(DialogUi,self).__init__()
-        print(PATH)
+        # print(PATH)
         uic.loadUi(f'{PATH}/dialog.ui',self)
-
+        if not btn_cancel:
+            self.horizontalLayout.takeAt(0).widget().deleteLater()
 
         self.btn_ok.clicked.connect(self.btn_ok_callback)
 
@@ -686,6 +698,7 @@ class ProgressUi(QtWidgets.QMainWindow):
         self.btn_show_details.clicked.connect(self.btn_show_details_callback)
         self.lbl_details_text=''
         self.lbl_details=None
+        self.scrollArea=None
 
 
     def btn_show_details_callback(self):
@@ -710,7 +723,7 @@ class ProgressUi(QtWidgets.QMainWindow):
     def update_details_text(self,arg):
 
         text=self.lbl_details_text
-        self.lbl_details_text = arg
+        self.lbl_details_text = text+'\n'+arg
 
         if self.lbl_details is not None:
             self.lbl_details.setText(self.lbl_details_text)
@@ -720,3 +733,4 @@ if __name__ == "__main__":
     window= Ui()
     window.show()
     app.exec_()
+    

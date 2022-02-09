@@ -24,6 +24,8 @@ parser.add_argument('ext',type=str,
 args = parser.parse_args()
 # print(args.size,args.ext)
 
+
+# used to identify that authentication completed successfully
 if is_root():
     print('Im root')
 
