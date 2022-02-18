@@ -1,11 +1,13 @@
 from PyQt5 import QtWidgets, uic ,QtCore
 import sys
+import os
 
+PATH=os.path.dirname(os.path.realpath(__file__))
 
 class Ui(QtWidgets.QMainWindow):
     def __init__(self):
         super(Ui,self).__init__()
-        uic.loadUi('Main3.ui',self)
+        uic.loadUi(f'{PATH}/ui/Main3.ui',self)
         self.show()
         
         self.btn_swap.clicked.connect(self.btn_swap_callback)
@@ -17,9 +19,15 @@ class Ui(QtWidgets.QMainWindow):
         self.swap_wid=None
         self.cache_wid=None
         self.journal_wid=None
+        self.mirrors_wid=None
         
     def btn_mirrors_callback(self):
-        pass
+        if self.mirrors_wid is None:
+            import mirrors
+            self.mirrors_wid=mirrors.MirrorsUi()
+            self.mirrors_wid.btn_mainmenu.clicked.connect(self.btn_mainmenu_callback)
+            self.gridLayout_7.addWidget(self.mirrors_wid)
+        self.stackedWidget.setCurrentIndex(4)
 
     def btn_cache_callback(self):
         if self.cache_wid is None:

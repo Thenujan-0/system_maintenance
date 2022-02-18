@@ -185,7 +185,7 @@ class swapWorker(QtCore.QRunnable):
 class Ui(QtWidgets.QWidget):
     def __init__(self):
         super(Ui, self).__init__()
-        uic.loadUi('swap_wid.ui',self)
+        uic.loadUi(f'{PATH}/ui/swap_wid.ui',self)
 
         
         self.threadpool=QtCore.QThreadPool()
@@ -574,8 +574,7 @@ class Partition():
 
 
 def readPartitions():
-    with open ('out.txt','r') as f:
-        a =f.read()
+    a=subprocess.check_output(['pkexec fdisk -l'],shell=True)
     lines= a.splitlines()
     target_lines=[]
     for line in lines:
@@ -605,7 +604,7 @@ def readPartitions():
 class PartitionsUi(QtWidgets.QMainWindow):
     def __init__(self):
         super( PartitionsUi,self).__init__()
-        uic.loadUi('partitions.ui',self)
+        uic.loadUi(f'{PATH}/ui/partitions.ui',self)
         self.total_partitions=0
         self.swap_available_partitions=[]
 
@@ -682,7 +681,7 @@ class DialogUi(QtWidgets.QDialog):
     def __init__(self,btn_cancel=True):
         super(DialogUi,self).__init__()
         # print(PATH)
-        uic.loadUi(f'{PATH}/dialog.ui',self)
+        uic.loadUi(f'{PATH}/ui/dialog.ui',self)
         if not btn_cancel:
             self.horizontalLayout.takeAt(0).widget().deleteLater()
 
@@ -694,7 +693,7 @@ class DialogUi(QtWidgets.QDialog):
 class ProgressUi(QtWidgets.QMainWindow):
     def __init__(self):
         super(ProgressUi,self).__init__()
-        uic.loadUi(f'{PATH}/progress.ui',self)
+        uic.loadUi(f'{PATH}/ui/progress.ui',self)
         self.btn_show_details.clicked.connect(self.btn_show_details_callback)
         self.lbl_details_text=''
         self.lbl_details=None

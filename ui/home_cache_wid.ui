@@ -114,7 +114,7 @@
           <item>
            <widget class="QLineEdit" name="lineEdit">
             <property name="text">
-             <string>0</string>
+             <string>1</string>
             </property>
            </widget>
           </item>
@@ -168,13 +168,6 @@
         <number>20</number>
        </property>
        <item>
-        <widget class="QPushButton" name="btn_mainmenu">
-         <property name="text">
-          <string>Main menu</string>
-         </property>
-        </widget>
-       </item>
-       <item>
         <spacer name="horizontalSpacer">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
@@ -204,6 +197,13 @@
       </layout>
      </item>
     </layout>
+   </item>
+   <item row="1" column="0">
+    <widget class="QPushButton" name="btn_mainmenu">
+     <property name="text">
+      <string>Main menu</string>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>

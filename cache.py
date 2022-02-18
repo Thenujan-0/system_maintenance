@@ -4,18 +4,24 @@ import subprocess
 from time import sleep
 import threading
 import re
+import os
+
+PATH= os.path.dirname(os.path.realpath(__file__))
 
 class Ui(QtWidgets.QWidget):
     def __init__(self):
         super(Ui, self).__init__()
-        uic.loadUi('home_cache_wid.ui', self)
+        uic.loadUi(f'{PATH}/ui/home_cache_wid.ui', self)
         
         self.btn_clear.clicked.connect(self.clear_btn_callback)
         self.btn_remove_manually.clicked.connect(self.remove_manually_btn_callback)
         self.btn_clear_all.clicked.connect(self.clear_all_btn_callback)
         self.lineEdit.returnPressed.connect(self.btn_clear.click)
         
-        
+        #edit the default value of comboBoxes as they default to zero index
+        self.comboBox.setCurrentIndex(1)
+
+
         # self.lineEdit.clicked.connect(self.lineEdit.selectAll())
     # def clear_btn_callback(self):
     #     print('clicked')
@@ -100,5 +106,6 @@ class Ui(QtWidgets.QWidget):
 if __name__=='__main__':
     app = QtWidgets.QApplication(sys.argv)
     window = Ui()
-    window.show
+    window.show()
+    
     app.exec_()

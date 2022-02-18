@@ -6,11 +6,13 @@ import threading
 import re
 import traceback
 from  journaldconf import readJournal,editJournal,setJournalConfig
+import os
+PATH= os.path.dirname(os.path.realpath(__file__))
 
 class Ui(QtWidgets.QWidget):
     def __init__(self):
         super(Ui, self).__init__()
-        uic.loadUi('journalctl_wid.ui', self)
+        uic.loadUi(f'{PATH}/ui/journalctl_wid.ui', self)
         
     
         threading.Thread(target=self.setSizeLabel).start()
@@ -40,6 +42,8 @@ class Ui(QtWidgets.QWidget):
         self.gridLayout_4.addWidget(self.label, 0, 0, 1, 1)
         self.scrollArea.setWidget(self.scrollAreaWidgetContents)
         
+        #edit the defaults values of the combo boxes as it defaults to the zero index by default
+        self.comboBoxTime.setCurrentIndex(2)
         
         threading.Thread(target=self.setMaxSizeLabel).start()
         

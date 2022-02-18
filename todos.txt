@@ -4,3 +4,6 @@ replace the condition that blocks selecting a partition as swap from too big to 
 check if system is in ext4 for handling swap
 do storage check before creating swap file
 creating swap file details : delete unnecessary new lines and repeated lines
+change default values of comboBoxex line edits by reacting to several user inputs
+remove other swap when adding systemd-swap
+write tests

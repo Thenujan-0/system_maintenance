@@ -76,6 +76,13 @@
       <widget class="QWidget" name="page_4">
        <layout class="QGridLayout" name="gridLayout_9"/>
       </widget>
+      <widget class="QWidget" name="page_5">
+       <layout class="QGridLayout" name="gridLayout_7">
+        <item row="0" column="0">
+         <layout class="QGridLayout" name="gridLayout_5"/>
+        </item>
+       </layout>
+      </widget>
      </widget>
     </item>
    </layout>
