@@ -323,7 +323,7 @@ class Ui(QtWidgets.QWidget):
             # a window to mention that other swaps have to be removed
             dialog1=DialogUi(btn_cancel=True)
             dialog1.label.setText("In order to enable systemd swap other swaps have to be removed are you sure want to continue?")
-            dialog.show()
+            dialog1.show()
         #disable all other swap   
 
         subprocess.run(['pkexec sh -c \' systemctl enable systemd-swap.service && systemctl start systemd-swap.service\' '],shell=True)
