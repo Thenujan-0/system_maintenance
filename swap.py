@@ -173,7 +173,7 @@ class swapWorker(QtCore.QRunnable):
         except:
             traceback.print_exc()
             exectype,value=sys.exc_info()[:2]
-            self.signals.error.emit((exctype,value,traceback.format_exc()))
+            self.signals.error.emit((exectype,value,traceback.format_exc()))
 
         else:
             self.signals.result.emit(value)
