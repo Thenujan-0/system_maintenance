@@ -25,7 +25,7 @@ if __name__ == '__main__':
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
-        logging.FileHandler(f'{PATH}/.system_maintenance/swap.log'),
+        logging.FileHandler(f'{HOME}/.system_maintenance/swap.log'),
         logging.StreamHandler()
     ],
 )
@@ -345,8 +345,9 @@ class Ui(QtWidgets.QWidget):
         self.threadpool.start(worker)
 
     def installer(self):
-        self.install_output =subprocess.check_output(['pkexec pacman -S systemd-swap --noconfirm'],shell=True)
-    
+        self.install_output =subprocess.check_output(['pkexec pacman -S systemd-swap --noconfirm'],shell=True).decode()
+        print(self.install_output)
+        
     def btn_remove_callback(self):
         if self.tableWidget_selected is not None:
             file_name = self.tableWidget_selected
@@ -375,11 +376,12 @@ class Ui(QtWidgets.QWidget):
         worker.signals.result.connect(self.setUiElements)
         
     def setUiElements(self): 
-        """Refreshes Ui elements  only refreshes swap table """
+        """Refreshes Ui elements  only refreshes swap table and systemd-swap button """
 
 
 
-        sysd_swap= self.systemd_swap_status()
+        sysd_swap= self.get_systemd_swap_status()
+        
         # print(sysd_swap)
         if sysd_swap=='not installed':
             self.lbl_systemdswap_status.setText("systemd-swap is not installed")
@@ -394,6 +396,8 @@ class Ui(QtWidgets.QWidget):
             self.lbl_systemdswap_status.setText('Systemd-swap is now disabled')
             self.btn_systemdswap.setText('Enable systemd-swap')
             self.reconnect(self.btn_systemdswap.clicked,self.enable_systemdswap)
+        else:
+            logging.error("get_systemd_swap_status returned an unknown value")
         out =subprocess.check_output(['swapon'],shell=True).decode()
         linesCount = len(out.splitlines())
         # print('linesCount',linesCount)
@@ -431,12 +435,24 @@ class Ui(QtWidgets.QWidget):
         item=self.tableWidget.horizontalHeader()
         item.setHighlightSections(False)
 
-    def systemd_swap_status(self):
+    def get_systemd_swap_status(self):
         """returns 'active' or 'not installed' or 'not active' 
         #! todo here maybe not here but continue from here
         """
-        out =subprocess.check_output(["systemctl status systemd-swap.service | head -n 3 | awk '{print $2}'"],shell=True).decode()
-        if 'not-found' in out:
+        p= subprocess.Popen(["systemctl status systemd-swap.service | head -n 3 | awk '{print $2}'"],shell=True,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL)
+        p.wait()
+        stdout=p.stdout
+        
+        out=''
+        
+        for line in stdout:
+            out+= line.decode()
+            
+        # print(out)
+        
+        
+        # print(out,'out')
+        if 'not-found' in out or 'could not be found.' in out:
             return 'not installed'
         
         elif 'loaded' in out :
